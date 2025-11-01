@@ -1,0 +1,42 @@
+{
+ "transport": {
+    "Car (Small Petrol)": 0.15,
+    "Car (Medium Petrol)": 0.18,
+    "Car (Large Petrol)": 0.22,
+    "Car (Medium Diesel)": 0.17,
+    "Car (Hybrid)": 0.10,
+    "Car (Electric)": 0.05,
+    "Bus (Local)": 0.10,
+    "Bus (Coach/Long-Distance)": 0.03,
+    "Train (National)": 0.04,
+    "Train (Local/Metro)": 0.02,
+    "Flight (Short-Haul, <1500km)": 0.25,
+    "Flight (Long-Haul, >1500km)": 0.15,
+    "Motorcycle": 0.09,
+    "Taxi / Ride-Hailing": 0.20
+  },
+  "food_by_meal": {
+    "Red Meat Meal (beef, lamb)": 2.8,
+    "Mixed Meal (chicken, fish)": 1.5,
+    "Vegetarian Meal (dairy, vegetables)": 0.8,
+    "Vegan Meal (plant-based)": 0.5
+  },
+  "digital": {
+    "streaming_hour": 0.04,
+    "data_gb": 0.01
+  },
+  "home_energy": {
+    "electricity_kwh": 0.82,
+    "natural_gas_therm": 5.3
+  },
+  "shopping_total_footprint": {
+    "T-shirt (Cotton)": 2.5,
+    "Jeans (Pair)": 30.0,
+    "Dress (Synthetic)": 12.5,
+    "Shoes (Pair)": 13.5,
+    "Smartphone": 70.0,
+    "Laptop": 200.0,
+    "Furniture (Medium Item)": 50.0,
+    "Secondhand Clothing (Item)": 0.5
+  }
+}
