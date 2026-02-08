@@ -1,3 +1,8 @@
+<img width="904" height="403" alt="Screenshot 2026-02-08 200704" src="https://github.com/user-attachments/assets/c996422a-cf4a-4bff-bdb4-d9848ef778f9" />
+
+<img width="907" height="395" alt="Screenshot 2026-02-08 200730" src="https://github.com/user-attachments/assets/be1874a3-826c-4551-b0fa-c881c7cfec5b" />
+
+
 # Carbon-footprint
 This project shows how much carbon footprint is created by an individual.
 # 🌍 CarbonTrack — Personal Carbon Footprint Calculator
