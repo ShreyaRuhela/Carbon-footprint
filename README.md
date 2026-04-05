@@ -89,32 +89,19 @@ Built with a modular API-driven architecture, Carbon Pulse provides real-time in
 ---
 
 🚀 Features
-👤 User Authentication & Profiles
-Register and log in using email, with persistent user profiles and personalized tracking.
-📊 Multi-Category Carbon Tracking
-Calculate emissions across key lifestyle categories: Transport, Food, Digital Usage, Home Energy, and Shopping.
-⚡ Real-Time Carbon Calculation
-Instant emission calculations using dynamic emission factors via a RESTful Flask API.
-🗃 Persistent Data Storage
-Stores user data and carbon logs using SQLite for long-term tracking and retrieval.
-🕒 Activity History Tracking
-View complete history of carbon entries with timestamps and aggregated totals.
-📈 Interactive Dashboard
-Visualize carbon footprint through charts including category breakdown, trends, and distribution.
-🌍 Comparative Analytics
-Compare personal carbon footprint with India’s average (5.21 kg/day) and global average (11.97 kg/day).
-🌳 Sustainability Insights
-Estimate number of trees required to offset emissions and identify highest contributing category.
-🔄 Session + Persistent Logging
-Supports both real-time session tracking and permanent storage in database.
-🧩 Modular API Architecture
-Separate endpoints for each category, enabling scalability and easy feature expansion.
-📦 Data-Driven Design
-Emission factors stored in JSON for flexibility and easy updates without modifying code.
-🖥 Modern Interactive UI
-Built with React and Tailwind CSS, featuring responsive design and smooth user experience.
-🧠 Normalized Carbon Modeling
-Converts diverse inputs (km, meals, kWh, etc.) into a unified daily carbon footprint metric, including lifespan-based calculations for shopping.
+-👤 User Authentication & Profiles
+-📊 Multi-Category Carbon Tracking
+-⚡ Real-Time Carbon Calculation
+-🗃 Persistent Data Storage
+-🕒 Activity History Tracking
+-📈 Interactive Dashboard
+-🌍 Comparative Analytics
+-🌳 Sustainability Insights
+-🔄 Session + Persistent Logging
+-🧩 Modular API Architecture
+-📦 Data-Driven Design
+-🖥 Modern Interactive UI
+-🧠 Normalized Carbon Modeling
 
 
 
