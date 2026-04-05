@@ -18,32 +18,105 @@
 
 
 
-# Carbon-footprint
-This project shows how much carbon footprint is created by an individual.
-# 🌍 CarbonTrack — Personal Carbon Footprint Calculator
+# 🌱 Carbon Pulse — Personal Carbon Footprint Tracker
 
-**CarbonTrack** is a lightweight app that helps individuals calculate their **daily and annual carbon footprint** based on their lifestyle activities — including travel, electricity use, diet, digital habits, and shopping.  
-It gives users a clear picture of their environmental impact and provides actionable suggestions to reduce it.
+A full-stack web application that helps users track, analyze, and reduce their daily carbon footprint across multiple lifestyle categories.  
+
+Built with a modular API-driven architecture, Carbon Pulse provides real-time insights, historical tracking, and comparative analytics against national and global averages.
 
 ---
 
 ## 🚀 Features
 
-- 🔹 Calculates carbon emissions from:
-  - Transportation (car, bike, bus, train, flight)
-  - Electricity and home energy use
-  - Food and diet type
-  - Digital usage (streaming, phone, laptop)
-  - Shopping & consumption (clothes, electronics, etc.)
-- 🔹 Converts daily inputs into estimated **kg CO₂/day** and **tonnes CO₂/year**
-- 🔹 Category-wise breakdown for better insight
-- 🔹 Amortized emissions for one-time purchases (e.g., clothes, phone)
-- 🔹 Customizable emission factors per country
-- 🔹 Simple, intuitive UI or API-based inputs
-- 🔹 Exportable daily reports (CSV / JSON)
-- 🔹 Action-based tips to help reduce your footprint
+### 👤 User System
+- User registration & login (email-based)
+- Persistent user profiles
+- Personalized carbon tracking
+
+### 📊 Carbon Tracking
+- Track emissions across:
+  - 🚗 Transport
+  - 🍽 Food
+  - 💻 Digital Usage
+  - ⚡ Home Energy
+  - 🛍 Shopping
+- Real-time carbon calculation
+- Session-based + persistent logging
+
+### 📈 Dashboard & Analytics
+- Daily carbon footprint tracking
+- Category-wise emission breakdown
+- Comparison with:
+  - 🇮🇳 India average (5.21 kg/day)
+  - 🌍 Global average (11.97 kg/day)
+- Visualizations using charts:
+  - Bar charts
+  - Line graphs
+  - Doughnut charts
+
+### 🕒 History Tracking
+- Complete user activity history
+- Timestamped logs
+- Total emissions calculation
+
+### 🌳 Sustainability Insights
+- Tree offset estimation
+- Top emission category detection
+- Personalized recommendations
 
 ---
+
+## 🧠 Tech Stack
+
+### Frontend
+- React (via CDN)
+- Tailwind CSS
+- Chart.js (data visualization)
+
+### Backend
+- Flask (Python)
+- REST API architecture
+- Flask-CORS
+
+### Database
+- SQLite (`carbon_tracker.db`)
+- Tables:
+  - `users`
+  - `carbon_logs`
+
+### Data Layer
+- JSON-based emission factors
+---
+
+🚀 Features
+👤 User Authentication & Profiles
+Register and log in using email, with persistent user profiles and personalized tracking.
+📊 Multi-Category Carbon Tracking
+Calculate emissions across key lifestyle categories: Transport, Food, Digital Usage, Home Energy, and Shopping.
+⚡ Real-Time Carbon Calculation
+Instant emission calculations using dynamic emission factors via a RESTful Flask API.
+🗃 Persistent Data Storage
+Stores user data and carbon logs using SQLite for long-term tracking and retrieval.
+🕒 Activity History Tracking
+View complete history of carbon entries with timestamps and aggregated totals.
+📈 Interactive Dashboard
+Visualize carbon footprint through charts including category breakdown, trends, and distribution.
+🌍 Comparative Analytics
+Compare personal carbon footprint with India’s average (5.21 kg/day) and global average (11.97 kg/day).
+🌳 Sustainability Insights
+Estimate number of trees required to offset emissions and identify highest contributing category.
+🔄 Session + Persistent Logging
+Supports both real-time session tracking and permanent storage in database.
+🧩 Modular API Architecture
+Separate endpoints for each category, enabling scalability and easy feature expansion.
+📦 Data-Driven Design
+Emission factors stored in JSON for flexibility and easy updates without modifying code.
+🖥 Modern Interactive UI
+Built with React and Tailwind CSS, featuring responsive design and smooth user experience.
+🧠 Normalized Carbon Modeling
+Converts diverse inputs (km, meals, kWh, etc.) into a unified daily carbon footprint metric, including lifespan-based calculations for shopping.
+
+
 
 ## 🧩 Project Overview
 
@@ -51,7 +124,8 @@ Your **carbon footprint** is the total greenhouse gas emissions caused by your d
 This app turns everyday activities (travel, food, power, purchases) into measurable CO₂ values, helping you:
 - Understand which habits have the most environmental impact 🌱  
 - Track improvements over time 📊  
-- Make informed, sustainable choices 🌞  
+- Make informed, sustainable choices 🌞
+- Compares users' average with the global and Indian Average
 
 ---
 
