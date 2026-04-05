@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #061111; color: #e0f2f1; }
@@ -19,23 +20,39 @@
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .card-front { background: #0e2525; border: 1px dashed #2a5a5a; }
         .card-back { background: #2d1a1a; color: #ff8a80; transform: rotateY(180deg); border: 1px solid #ff5252; }
+        input, select { background-color: #061111 !important; }
+        .nav-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s; cursor: pointer; border: 1px solid transparent; }
+        .nav-btn.active { background: #1a4a4a; border-color: #64ffda; color: #64ffda; }
+        .nav-btn.inactive { background: transparent; border-color: #1a3a3a; color: #8892b0; }
+        .nav-btn:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-
+        const { useState, useEffect, useMemo, useRef } = React;
         const API_URL = 'http://localhost:5000';
+
+        const INDIA_DAILY_AVG = 5.21;
+        const WORLD_DAILY_AVG = 11.97;
+
+        const CATEGORY_COLORS = {
+            Transport: '#64ffda', Food: '#ff9e64', Digital: '#a5b4fc',
+            Energy: '#fde68a', Shopping: '#f9a8d4'
+        };
 
         const Icons = {
             Transport: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h10"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>,
-            Food: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>,
-            Digital: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-            Home: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-            Shopping: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-            Tree: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19V5M5 11l7-7 7 7M5 19l7-7 7 7"/></svg>
+            Food:      () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>,
+            Digital:   () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+            Home:      () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Shopping:  () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+            Tree:      () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19V5M5 11l7-7 7 7M5 19l7-7 7 7"/></svg>,
+            History:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.37"/></svg>,
+            Dashboard: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,
+            Tracker:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Logout:    () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         };
 
         const impactData = [
@@ -46,55 +63,345 @@
             { title: "🦋 Extinction", text: "Climate change is forcing species to migrate faster than they can adapt." }
         ];
 
-        function App() {
-            const [factors, setFactors] = useState(null);
+        // ══════════════════════════════════════════════════════════════
+        // REGISTER PAGE
+        // ══════════════════════════════════════════════════════════════
+        function RegisterPage({ onLogin }) {
+            const [form, setForm] = useState({ name: '', email: '', age: '', city: '' });
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+
+            const submit = async () => {
+                if (!form.name.trim() || !form.email.trim()) { setError('Name and email are required.'); return; }
+                setLoading(true); setError('');
+                try {
+                    const res = await fetch(`${API_URL}/user/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+                    const data = await res.json();
+                    if (data.user) onLogin(data.user, data.is_new);
+                    else setError(data.error || 'Something went wrong.');
+                } catch { setError('Cannot connect to backend. Make sure Flask is running.'); }
+                setLoading(false);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center px-6">
+                    <div className="floating-box bg-[#142828] border-2 border-[#64ffda] px-12 py-6 rounded-[30px] shadow-[0_0_50px_rgba(100,255,218,0.2)] mb-10">
+                        <h1 className="text-5xl font-black text-white tracking-tighter text-center">Carbon Pulse</h1>
+                        <p className="text-center text-[#64ffda] text-sm mt-2 tracking-widest uppercase">Track your footprint</p>
+                    </div>
+                    <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[32px] p-10 w-full max-w-md shadow-2xl">
+                        <h2 className="text-xl font-black text-[#64ffda] uppercase tracking-widest mb-1">Get Started</h2>
+                        <p className="text-[#8892b0] text-xs mb-8">Enter your details to track and save your carbon history</p>
+                        {error && <div className="bg-[#2d1a1a] border border-[#ff5252] text-[#ff8a80] text-sm rounded-xl px-4 py-3 mb-6">{error}</div>}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold uppercase text-[#8892b0] mb-1 block">Full Name *</label>
+                                <input type="text" placeholder="Shreya Ruhela" value={form.name} onChange={e => set('name', e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white outline-none focus:border-[#64ffda] transition-all" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold uppercase text-[#8892b0] mb-1 block">Email Address *</label>
+                                <input type="email" placeholder="you@email.com" value={form.email} onChange={e => set('email', e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white outline-none focus:border-[#64ffda] transition-all" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase text-[#8892b0] mb-1 block">Age</label>
+                                    <input type="number" placeholder="22" value={form.age} onChange={e => set('age', e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white outline-none" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase text-[#8892b0] mb-1 block">City</label>
+                                    <input type="text" placeholder="Delhi" value={form.city} onChange={e => set('city', e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white outline-none" />
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={submit} disabled={loading} className="w-full mt-8 py-4 rounded-2xl bg-[#64ffda] text-[#061111] font-black text-lg hover:bg-white transition-all disabled:opacity-50">
+                            {loading ? 'Loading...' : 'START TRACKING →'}
+                        </button>
+                        <p className="text-center text-[#8892b0] text-xs mt-4">Already used this before? Enter your email and we'll find your history.</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // CHART COMPONENTS
+        // ══════════════════════════════════════════════════════════════
+        function CategoryBarChart({ logs }) {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                const totals = {};
+                logs.forEach(l => { totals[l.category] = (totals[l.category] || 0) + l.footprint_kg; });
+                const labels = Object.keys(totals);
+                const values = labels.map(k => +totals[k].toFixed(2));
+                const colors = labels.map(k => CATEGORY_COLORS[k] || '#64ffda');
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(canvasRef.current, {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'kg CO₂', data: values, backgroundColor: colors.map(c => c + '99'), borderColor: colors, borderWidth: 2, borderRadius: 10 }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} kg CO₂` } } }, scales: { x: { ticks: { color: '#8892b0' }, grid: { color: '#1a3a3a' } }, y: { ticks: { color: '#8892b0' }, grid: { color: '#1a3a3a' }, beginAtZero: true } } }
+                });
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [logs]);
+            return <canvas ref={canvasRef} />;
+        }
+
+        function DailyLineChart({ logs }) {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!canvasRef.current || !logs.length) return;
+                const byDate = {};
+                logs.forEach(l => { const d = l.logged_at ? l.logged_at.split(' ')[0] : 'Unknown'; byDate[d] = (byDate[d] || 0) + l.footprint_kg; });
+                const sorted = Object.keys(byDate).sort();
+                const values = sorted.map(d => +byDate[d].toFixed(2));
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(canvasRef.current, {
+                    type: 'line',
+                    data: {
+                        labels: sorted,
+                        datasets: [
+                            { label: 'Your Daily Footprint', data: values, borderColor: '#64ffda', backgroundColor: 'rgba(100,255,218,0.08)', borderWidth: 2, pointBackgroundColor: '#64ffda', pointRadius: 5, tension: 0.4, fill: true },
+                            { label: 'India Avg (5.21 kg)', data: sorted.map(() => INDIA_DAILY_AVG), borderColor: '#ff9e64', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false },
+                            { label: 'World Avg (11.97 kg)', data: sorted.map(() => WORLD_DAILY_AVG), borderColor: '#f9a8d4', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false }
+                        ]
+                    },
+                    options: { responsive: true, plugins: { legend: { labels: { color: '#8892b0', font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} kg` } } }, scales: { x: { ticks: { color: '#8892b0', maxTicksLimit: 7 }, grid: { color: '#1a3a3a' } }, y: { ticks: { color: '#8892b0' }, grid: { color: '#1a3a3a' }, beginAtZero: true } } }
+                });
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [logs]);
+            return <canvas ref={canvasRef} />;
+        }
+
+        function CategoryDoughnut({ logs }) {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!canvasRef.current || !logs.length) return;
+                const totals = {};
+                logs.forEach(l => { totals[l.category] = (totals[l.category] || 0) + l.footprint_kg; });
+                const labels = Object.keys(totals);
+                const values = labels.map(k => +totals[k].toFixed(2));
+                const colors = labels.map(k => CATEGORY_COLORS[k] || '#64ffda');
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(canvasRef.current, {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: values, backgroundColor: colors.map(c => c + 'cc'), borderColor: '#061111', borderWidth: 3 }] },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8892b0', font: { size: 11 }, padding: 16 } }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} kg CO₂` } } }, cutout: '65%' }
+                });
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [logs]);
+            return <canvas ref={canvasRef} />;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // DASHBOARD PAGE
+        // ══════════════════════════════════════════════════════════════
+        function DashboardPage({ user }) {
+            const [history, setHistory] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetch(`${API_URL}/user/history/${encodeURIComponent(user.email)}`)
+                    .then(r => r.json())
+                    .then(d => { setHistory(d); setLoading(false); })
+                    .catch(() => setLoading(false));
+            }, [user]);
+
+            if (loading) return (
+                <div className="flex items-center justify-center h-96">
+                    <div className="w-10 h-10 border-4 border-[#64ffda] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            );
+
+            if (!history || history.total_entries === 0) return (
+                <div className="flex flex-col items-center justify-center h-96 text-center">
+                    <p className="text-6xl mb-6">🌱</p>
+                    <p className="text-white font-black text-2xl mb-2">No data yet</p>
+                    <p className="text-[#8892b0] text-sm">Go to the Tracker tab, log some entries — your dashboard will appear here.</p>
+                </div>
+            );
+
+            const logs = history.logs;
+            const total = history.total_footprint_kg;
+            const days = [...new Set(logs.map(l => l.logged_at?.split(' ')[0]))].filter(Boolean).length || 1;
+            const dailyAvg = +(total / days).toFixed(2);
+            const vsIndia = +((dailyAvg - INDIA_DAILY_AVG) / INDIA_DAILY_AVG * 100).toFixed(0);
+            const vsWorld = +((dailyAvg - WORLD_DAILY_AVG) / WORLD_DAILY_AVG * 100).toFixed(0);
+            const treesNeeded = Math.ceil(total / 21);
+            const catTotals = {};
+            logs.forEach(l => { catTotals[l.category] = (catTotals[l.category] || 0) + l.footprint_kg; });
+            const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+            const maxVal = Math.max(dailyAvg, WORLD_DAILY_AVG) * 1.2;
+
+            return (
+                <div className="space-y-6">
+                    {/* Stat Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <StatCard label="Total Logged" value={`${total} kg`} sub="all time" color="#64ffda" />
+                        <StatCard label="Daily Average" value={`${dailyAvg} kg`} sub={`over ${days} day${days > 1 ? 's' : ''}`} color="#a5b4fc" />
+                        <StatCard label="vs India Avg" value={`${vsIndia > 0 ? '+' : ''}${vsIndia}%`} sub={`India: ${INDIA_DAILY_AVG} kg/day`} color={vsIndia > 0 ? '#ff8a80' : '#64ffda'} />
+                        <StatCard label="vs World Avg" value={`${vsWorld > 0 ? '+' : ''}${vsWorld}%`} sub={`World: ${WORLD_DAILY_AVG} kg/day`} color={vsWorld > 0 ? '#ff8a80' : '#64ffda'} />
+                    </div>
+
+                    {/* Insight Banner */}
+                    <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[24px] px-8 py-5 flex items-start gap-4">
+                        <span className="text-3xl mt-1">💡</span>
+                        <div>
+                            <p className="text-white font-bold text-sm">
+                                Your biggest emitter is <span style={{ color: CATEGORY_COLORS[topCat[0]] || '#64ffda' }}>{topCat[0]}</span> at {topCat[1].toFixed(2)} kg total.
+                                {' '}You need <span className="text-[#64ffda]">{treesNeeded} tree{treesNeeded !== 1 ? 's' : ''}</span> to offset everything.
+                            </p>
+                            <p className="text-[#8892b0] text-xs mt-1">
+                                {vsIndia > 0
+                                    ? `Your daily average is ${vsIndia}% above India's average. Small changes in ${topCat[0].toLowerCase()} can make a big difference.`
+                                    : `Great job! Your daily average is below India's average of ${INDIA_DAILY_AVG} kg. Keep it up.`}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Charts Row 1 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[24px] p-6">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] mb-4">Emissions by Category (kg CO₂)</p>
+                            <CategoryBarChart logs={logs} />
+                        </div>
+                        <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[24px] p-6">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] mb-4">Category Share</p>
+                            <CategoryDoughnut logs={logs} />
+                        </div>
+                    </div>
+
+                    {/* Daily Trend */}
+                    <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[24px] p-6">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] mb-1">Daily Footprint Trend</p>
+                        <p className="text-[#4a6a6a] text-[10px] mb-4">Your footprint vs India & World daily averages</p>
+                        <DailyLineChart logs={logs} />
+                    </div>
+
+                    {/* Comparison Bars */}
+                    <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[24px] p-6">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] mb-6">How You Compare (Daily Average)</p>
+                        <CompBar label="You" value={dailyAvg} max={maxVal} color="#64ffda" />
+                        <CompBar label="India Avg" value={INDIA_DAILY_AVG} max={maxVal} color="#ff9e64" />
+                        <CompBar label="World Avg" value={WORLD_DAILY_AVG} max={maxVal} color="#f9a8d4" />
+                    </div>
+                </div>
+            );
+        }
+
+        function StatCard({ label, value, sub, color }) {
+            return (
+                <div className="bg-[#0e2525] border border-[#1a3a3a] rounded-[20px] p-5">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[#8892b0] mb-2">{label}</p>
+                    <p className="text-2xl font-black" style={{ color }}>{value}</p>
+                    <p className="text-[10px] text-[#4a6a6a] mt-1">{sub}</p>
+                </div>
+            );
+        }
+
+        function CompBar({ label, value, max, color }) {
+            const pct = Math.min((value / max) * 100, 100);
+            return (
+                <div className="mb-4">
+                    <div className="flex justify-between mb-1">
+                        <span className="text-xs text-[#8892b0]">{label}</span>
+                        <span className="text-xs font-bold" style={{ color }}>{value} kg/day</span>
+                    </div>
+                    <div className="w-full bg-[#1a3a3a] rounded-full h-3">
+                        <div className="h-3 rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }}></div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // HISTORY PANEL
+        // ══════════════════════════════════════════════════════════════
+        function HistoryPanel({ user, onClose }) {
+            const [history, setHistory] = useState(null);
+            const [loading, setLoading] = useState(true);
+            useEffect(() => {
+                fetch(`${API_URL}/user/history/${encodeURIComponent(user.email)}`)
+                    .then(r => r.json()).then(d => { setHistory(d); setLoading(false); }).catch(() => setLoading(false));
+            }, []);
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-start justify-end">
+                    <div className="bg-[#0a1f1f] border-l border-[#1a3a3a] w-full max-w-md h-full overflow-y-auto p-8">
+                        <div className="flex items-center justify-between mb-8">
+                            <div><h2 className="text-xl font-black text-[#64ffda] uppercase tracking-widest">My History</h2><p className="text-[#8892b0] text-xs mt-1">{user.name} · {user.city || 'Earth'}</p></div>
+                            <button onClick={onClose} className="text-[#8892b0] hover:text-white text-2xl font-bold">✕</button>
+                        </div>
+                        {loading && <p className="text-[#8892b0] text-sm text-center mt-20">Loading...</p>}
+                        {!loading && history && (
+                            <>
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="bg-[#0e2525] rounded-2xl p-5 border border-[#1a3a3a]"><p className="text-[9px] uppercase tracking-widest text-[#8892b0] mb-1">Total Logged</p><p className="text-3xl font-black text-[#64ffda]">{history.total_footprint_kg} <span className="text-sm">kg</span></p></div>
+                                    <div className="bg-[#0e2525] rounded-2xl p-5 border border-[#1a3a3a]"><p className="text-[9px] uppercase tracking-widest text-[#8892b0] mb-1">Entries</p><p className="text-3xl font-black text-white">{history.total_entries}</p></div>
+                                </div>
+                                {history.logs.length === 0 ? (
+                                    <div className="text-center mt-20"><p className="text-4xl mb-4">🌱</p><p className="text-[#8892b0] text-sm">No entries yet.</p></div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] uppercase tracking-widest text-[#8892b0] mb-4">Past Entries</p>
+                                        {history.logs.map(log => (
+                                            <div key={log.id} className="bg-[#0e2525] rounded-2xl p-4 border border-[#1a3a3a] flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ color: CATEGORY_COLORS[log.category] || '#64ffda', border: `1px solid ${CATEGORY_COLORS[log.category] || '#64ffda'}` }}>{log.category}</span>
+                                                    <p className="text-[10px] text-[#8892b0] mt-1">{log.details}</p>
+                                                    <p className="text-[9px] text-[#4a6a6a] mt-1">{log.logged_at}</p>
+                                                </div>
+                                                <p className="text-lg font-black text-white ml-4">{log.footprint_kg} <span className="text-xs text-[#8892b0]">kg</span></p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // TRACKER PAGE
+        // ══════════════════════════════════════════════════════════════
+        function TrackerPage({ user, factors }) {
             const [activeTab, setActiveTab] = useState(null);
             const [currentResult, setCurrentResult] = useState(null);
             const [logs, setLogs] = useState([]);
-            const [error, setError] = useState(null);
-
-            useEffect(() => {
-                fetch(`${API_URL}/get-factors`)
-                    .then(res => res.json())
-                    .then(setFactors)
-                    .catch(() => setError("Backend disconnected. Run 'flask --app api run'"));
-            }, []);
-
-            const totalCarbon = useMemo(() => logs.reduce((acc, l) => acc + (l.footprint_kg || 0), 0), [logs]);
+            const [saveMsg, setSaveMsg] = useState('');
+            const totalCarbon = useMemo(() => logs.reduce((a, l) => a + (l.footprint_kg || 0), 0), [logs]);
             const treesNeeded = Math.ceil(totalCarbon / 21);
 
             const calculate = async (endpoint, payload, category) => {
                 setCurrentResult(null);
                 try {
-                    const response = await fetch(`${API_URL}${endpoint}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                    });
-                    const data = await response.json();
+                    const res = await fetch(`${API_URL}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const data = await res.json();
                     setCurrentResult({ ...data, category });
-                } catch (err) { setError("Calculation failed."); }
+                } catch {}
             };
 
-            const addLog = () => {
-                if (currentResult) {
-                    setLogs([...logs, { ...currentResult, id: Date.now() }]);
-                    setCurrentResult(null);
+            const addLog = async () => {
+                if (!currentResult) return;
+                setLogs(prev => [...prev, { ...currentResult, id: Date.now() }]);
+                if (user) {
+                    try {
+                        await fetch(`${API_URL}/user/log`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_email: user.email, category: currentResult.category, footprint_kg: currentResult.footprint_kg, details: currentResult.details || '' }) });
+                        setSaveMsg('✓ Saved to your history');
+                        setTimeout(() => setSaveMsg(''), 3000);
+                    } catch { setSaveMsg('Could not save to history'); }
                 }
+                setCurrentResult(null);
             };
-
-            if (!factors) return (
-                <div className="flex flex-col items-center justify-center min-h-screen">
-                    <div className="w-12 h-12 border-4 border-[#64ffda] border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <h1 className="text-xl font-bold tracking-widest uppercase text-[#64ffda]">Connecting to Pulse...</h1>
-                </div>
-            );
 
             return (
-                <div className="max-w-6xl mx-auto px-6 pt-12">
+                <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                         <div className="bg-[#0e2525] p-8 rounded-[32px] border border-[#1a3a3a] shadow-2xl text-center">
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8892b0] mb-2">Total Carbon Pulse</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#8892b0] mb-2">Today's Carbon Pulse</p>
                             <h2 className="text-6xl font-black text-[#64ffda]">{totalCarbon.toFixed(1)} <span className="text-xl">kg</span></h2>
                         </div>
                         <div className="bg-[#0e2525] p-8 rounded-[32px] border border-[#1a3a3a] flex items-center justify-between shadow-2xl">
@@ -107,39 +414,53 @@
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-center mb-16">
-                        <div className="floating-box bg-[#142828] bg-opacity-40 backdrop-blur-2xl border-2 border-[#64ffda] px-12 py-6 rounded-[30px] shadow-[0_0_50px_rgba(100,255,218,0.2)] mb-10">
-                            <h1 className="text-5xl font-black text-white tracking-tighter text-center">Carbon Pulse </h1>
-                        </div>
+                    {saveMsg && <div className="bg-[#1a3a1a] border border-[#64ffda] rounded-2xl px-6 py-3 mb-6 text-[#64ffda] text-sm font-bold text-center">{saveMsg}</div>}
 
+                    <div className="flex flex-col items-center mb-16">
+                        <div className="floating-box bg-[#142828] bg-opacity-40 border-2 border-[#64ffda] px-12 py-6 rounded-[30px] shadow-[0_0_50px_rgba(100,255,218,0.2)] mb-10">
+                            <h1 className="text-5xl font-black text-white tracking-tighter text-center">Carbon Pulse</h1>
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 w-full max-w-5xl">
                             <Tab id="transport" label="Transport" icon={<Icons.Transport />} active={activeTab} set={setActiveTab} />
-                            <Tab id="food" label="Food" icon={<Icons.Food />} active={activeTab} set={setActiveTab} />
-                            <Tab id="digital" label="Digital" icon={<Icons.Digital />} active={activeTab} set={setActiveTab} />
-                            <Tab id="home" label="Energy" icon={<Icons.Home />} active={activeTab} set={setActiveTab} />
-                            <Tab id="shopping" label="Shopping" icon={<Icons.Shopping />} active={activeTab} set={setActiveTab} />
+                            <Tab id="food"      label="Food"      icon={<Icons.Food />}      active={activeTab} set={setActiveTab} />
+                            <Tab id="digital"   label="Digital"   icon={<Icons.Digital />}   active={activeTab} set={setActiveTab} />
+                            <Tab id="home"      label="Energy"    icon={<Icons.Home />}      active={activeTab} set={setActiveTab} />
+                            <Tab id="shopping"  label="Shopping"  icon={<Icons.Shopping />}  active={activeTab} set={setActiveTab} />
                         </div>
-
                         <div className="w-full flex flex-col items-center mt-12">
-                            {activeTab === 'transport' && <InputForm factors={factors.transport} label="Distance (km)" onCalc={(m, v) => calculate('/calculate/transport', {mode: m, distance: v}, 'Transport')} />}
-                            {activeTab === 'food' && <InputForm factors={factors.food_by_meal} label="Meals" onCalc={(m, v) => calculate('/calculate/food', {meal_type: m, meal_count: v}, 'Food')} />}
-                            {activeTab === 'digital' && <InputForm factors={factors.digital} label="Usage (Hrs/GB)" onCalc={(m, v) => calculate('/calculate/digital', {activity: m, quantity: v}, 'Digital')} />}
-                            {activeTab === 'home' && <InputForm factors={factors.home_energy} label="Units" onCalc={(m, v) => calculate('/calculate/home_energy', {energy_type: m, monthly_usage: v}, 'Energy')} />}
-                            {activeTab === 'shopping' && <ShoppingForm factors={factors.shopping_total_footprint} onCalc={v => calculate('/calculate/shopping', v, 'Shopping')} />}
+                            {activeTab === 'transport' && <InputForm factors={factors.transport}                  label="Distance (km)"  onCalc={(m,v) => calculate('/calculate/transport',   {mode:m,distance:v},          'Transport')} />}
+                            {activeTab === 'food'      && <InputForm factors={factors.food_by_meal}               label="Meals"          onCalc={(m,v) => calculate('/calculate/food',        {meal_type:m,meal_count:v},    'Food')} />}
+                            {activeTab === 'digital'   && <InputForm factors={factors.digital}                    label="Usage (Hrs/GB)" onCalc={(m,v) => calculate('/calculate/digital',     {activity:m,quantity:v},       'Digital')} />}
+                            {activeTab === 'home'      && <InputForm factors={factors.home_energy}                label="Units"          onCalc={(m,v) => calculate('/calculate/home_energy', {energy_type:m,monthly_usage:v},'Energy')} />}
+                            {activeTab === 'shopping'  && <ShoppingForm factors={factors.shopping_total_footprint} onCalc={v => calculate('/calculate/shopping', v, 'Shopping')} />}
                         </div>
-
                         {currentResult && (
                             <div className="mt-8 bg-[#1a4a4a] border-4 border-[#64ffda] p-8 rounded-[40px] w-full max-w-xl text-center shadow-2xl">
+                                <p className="text-[10px] uppercase tracking-widest text-[#8892b0] mb-2">{currentResult.category}</p>
                                 <h3 className="text-5xl font-black text-white mb-2">+{currentResult.footprint_kg} kg</h3>
-                                <button onClick={addLog} className="w-full mt-4 py-4 rounded-2xl bg-[#64ffda] text-[#061111] font-black text-xl hover:bg-white transition-all">LOG TO PULSE</button>
+                                <p className="text-[#8892b0] text-xs mb-4">{currentResult.details}</p>
+                                <button onClick={addLog} className="w-full mt-2 py-4 rounded-2xl bg-[#64ffda] text-[#061111] font-black text-xl hover:bg-white transition-all">LOG TO PULSE</button>
+                            </div>
+                        )}
+                        {logs.length > 0 && (
+                            <div className="w-full max-w-xl mt-8">
+                                <p className="text-[10px] uppercase tracking-widest text-[#8892b0] mb-4 text-center">This Session</p>
+                                <div className="space-y-2">
+                                    {logs.map(log => (
+                                        <div key={log.id} className="bg-[#0e2525] rounded-xl px-5 py-3 border border-[#1a3a3a] flex justify-between items-center">
+                                            <span className="text-sm font-bold" style={{ color: CATEGORY_COLORS[log.category] || '#64ffda' }}>{log.category}</span>
+                                            <span className="text-white font-black">{log.footprint_kg} kg</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
 
                     <h2 className="text-[#64ffda] text-3xl font-black text-center mb-8 tracking-widest uppercase">The Ripple Effect</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-20">
-                        {impactData.map((item, index) => (
-                            <div key={index} className="impact-card">
+                        {impactData.map((item, i) => (
+                            <div key={i} className="impact-card">
                                 <div className="impact-card-inner">
                                     <div className="card-front"><h4 className="font-bold text-[#64ffda]">{item.title}</h4></div>
                                     <div className="card-back"><p className="text-xs">{item.text}</p></div>
@@ -147,6 +468,66 @@
                             </div>
                         ))}
                     </div>
+                </div>
+            );
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // MAIN APP
+        // ══════════════════════════════════════════════════════════════
+        function App() {
+            const [user, setUser]               = useState(null);
+            const [isNewUser, setIsNewUser]     = useState(false);
+            const [showHistory, setShowHistory] = useState(false);
+            const [factors, setFactors]         = useState(null);
+            const [page, setPage]               = useState('tracker');
+            const [error, setError]             = useState(null);
+
+            useEffect(() => {
+                if (!user) return;
+                fetch(`${API_URL}/get-factors`).then(r => r.json()).then(setFactors).catch(() => setError("Backend disconnected. Run 'python api.py'"));
+            }, [user]);
+
+            if (!user) return <RegisterPage onLogin={(u, isNew) => { setUser(u); setIsNewUser(isNew); }} />;
+
+            if (!factors) return (
+                <div className="flex flex-col items-center justify-center min-h-screen">
+                    <div className="w-12 h-12 border-4 border-[#64ffda] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <h1 className="text-xl font-bold tracking-widest uppercase text-[#64ffda]">Connecting to Pulse...</h1>
+                    {error && <p className="text-[#ff8a80] text-sm mt-4">{error}</p>}
+                </div>
+            );
+
+            return (
+                <div className="max-w-6xl mx-auto px-6 pt-8 pb-20">
+                    {/* Nav */}
+                    <div className="flex items-center justify-between mb-6 bg-[#0e2525] rounded-[24px] px-6 py-4 border border-[#1a3a3a]">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-[#64ffda] flex items-center justify-center text-[#061111] font-black text-sm">{user.name.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <p className="text-white font-bold text-sm">{user.name}</p>
+                                <p className="text-[#8892b0] text-[10px]">{user.city || 'Earth'} · {user.email}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setPage('tracker')}   className={`nav-btn ${page === 'tracker'   ? 'active' : 'inactive'}`}><Icons.Tracker />   Tracker</button>
+                            <button onClick={() => setPage('dashboard')} className={`nav-btn ${page === 'dashboard' ? 'active' : 'inactive'}`}><Icons.Dashboard /> Dashboard</button>
+                            <button onClick={() => setShowHistory(true)} className="nav-btn inactive"><Icons.History /> History</button>
+                            <button onClick={() => setUser(null)}        className="nav-btn inactive"><Icons.Logout />  Out</button>
+                        </div>
+                    </div>
+
+                    {isNewUser && (
+                        <div className="bg-[#1a3a1a] border border-[#64ffda] rounded-2xl px-6 py-4 mb-6 flex items-center justify-between">
+                            <p className="text-[#64ffda] text-sm font-bold">🌱 Welcome, {user.name}! Your carbon journey starts now. Every entry is saved to your personal history.</p>
+                            <button onClick={() => setIsNewUser(false)} className="text-[#64ffda] text-lg ml-4">✕</button>
+                        </div>
+                    )}
+
+                    {page === 'tracker'   && <TrackerPage   user={user} factors={factors} />}
+                    {page === 'dashboard' && <DashboardPage user={user} />}
+
+                    {showHistory && <HistoryPanel user={user} onClose={() => setShowHistory(false)} />}
                 </div>
             );
         }
@@ -165,19 +546,17 @@
             const [m, setM] = useState(Object.keys(factors)[0]);
             const [v, setV] = useState(0);
             return (
-                <form className="bg-[#0e2525] p-10 rounded-[40px] border border-[#1a3a3a] w-full max-w-lg shadow-2xl" onSubmit={e => { e.preventDefault(); onCalc(m, v); }}>
+                <div className="bg-[#0e2525] p-10 rounded-[40px] border border-[#1a3a3a] w-full max-w-lg shadow-2xl">
                     <div className="mb-6">
                         <label className="text-[10px] font-bold uppercase text-[#8892b0] mb-2 block">Category</label>
-                        <select value={m} onChange={e => setM(e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-[#64ffda] outline-none">
-                            {Object.keys(factors).map(k => <option key={k} value={k}>{k}</option>)}
-                        </select>
+                        <select value={m} onChange={e => setM(e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-[#64ffda] outline-none">{Object.keys(factors).map(k => <option key={k} value={k}>{k}</option>)}</select>
                     </div>
                     <div className="mb-6">
                         <label className="text-[10px] font-bold uppercase text-[#8892b0] mb-2 block">{label}</label>
                         <input type="number" step="0.1" value={v} onChange={e => setV(e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white outline-none" />
                     </div>
-                    <button className="w-full bg-[#1a4a4a] border-2 border-[#64ffda] text-[#64ffda] py-4 rounded-xl font-bold">ANALYZE</button>
-                </form>
+                    <button onClick={() => onCalc(m, v)} className="w-full bg-[#1a4a4a] border-2 border-[#64ffda] text-[#64ffda] py-4 rounded-xl font-bold">ANALYZE</button>
+                </div>
             );
         }
 
@@ -186,19 +565,18 @@
             const [c, setC] = useState(1);
             const [l, setL] = useState(365);
             return (
-                <form className="bg-[#0e2525] p-10 rounded-[40px] border border-[#1a3a3a] w-full max-w-lg shadow-2xl" onSubmit={e => { e.preventDefault(); onCalc({item_type: t, item_count: c, lifespan_days: l}); }}>
+                <div className="bg-[#0e2525] p-10 rounded-[40px] border border-[#1a3a3a] w-full max-w-lg shadow-2xl">
                     <div className="mb-4"><label className="text-[10px] font-bold text-[#8892b0] uppercase">Type</label><select value={t} onChange={e => setT(e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-[#64ffda]">{Object.keys(factors).map(k => <option key={k} value={k}>{k}</option>)}</select></div>
                     <div className="grid grid-cols-2 gap-4 mb-6">
                         <div><label className="text-[10px] font-bold text-[#8892b0] uppercase">Qty</label><input type="number" value={c} onChange={e => setC(e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white" /></div>
                         <div><label className="text-[10px] font-bold text-[#8892b0] uppercase">Days</label><input type="number" value={l} onChange={e => setL(e.target.value)} className="w-full bg-[#061111] p-4 rounded-xl border border-[#1a3a3a] text-white" /></div>
                     </div>
-                    <button className="w-full bg-[#1a4a4a] border-2 border-[#64ffda] text-[#64ffda] py-4 rounded-xl font-bold">ANALYZE ASSET</button>
-                </form>
+                    <button onClick={() => onCalc({ item_type: t, item_count: c, lifespan_days: l })} className="w-full bg-[#1a4a4a] border-2 border-[#64ffda] text-[#64ffda] py-4 rounded-xl font-bold">ANALYZE ASSET</button>
+                </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
